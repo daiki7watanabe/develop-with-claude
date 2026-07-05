@@ -3,20 +3,13 @@ FROM ubuntu:26.04
 ARG TZ
 ARG CLAUDE_CODE_VERSION=latest
 ARG USERNAME=ubuntu
+ARG USERGROUP=ubuntu
 
 ENV TZ="$TZ"
 ENV DEVCONTAINER=true
 
-# 
+# ClaudeCodeを動作させるために必要なパッケージをインストール
 RUN apt-get update && apt-get install -y --no-install-recommends \
-  git \
-  procps \
-  fzf \
-  zsh \
-  man-db \
-  unzip \
-  gnupg2 \
-  gh \
   sudo \
   iptables \
   ipset \
@@ -31,8 +24,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 
 # Create workspace and config directories and set permissions
-RUN mkdir -p /workspace /home/ubuntu/.claude && \
-    chown -R ubuntu:ubuntu /workspace /home/ubuntu/.claude
+RUN mkdir -p /workspace /home/${USERNAME}/.claude && \
+    chown -R ${USERNAME}:${USERGROUP} /workspace /home/${USERNAME}/.claude
 
 WORKDIR /workspace
 
@@ -40,7 +33,7 @@ WORKDIR /workspace
 RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhistory/.bash_history" \
     && mkdir /commandhistory \
     && touch /commandhistory/.bash_history \
-    && chown -R $USERNAME /commandhistory
+    && chown -R ${USERNAME} /commandhistory
 
 
 # Install Claude
@@ -51,6 +44,6 @@ RUN curl -fsSL https://claude.ai/install.sh | bash -s ${CLAUDE_CODE_VERSION}
 COPY init-firewall.sh /usr/local/bin/
 USER root
 RUN chmod +x /usr/local/bin/init-firewall.sh && \
-  echo "ubuntu ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/ubuntu-firewall && \
-  chmod 0440 /etc/sudoers.d/ubuntu-firewall
-USER ubuntu
+  echo "${USERNAME} ALL=(root) NOPASSWD: /usr/local/bin/init-firewall.sh" > /etc/sudoers.d/${USERNAME}-firewall && \
+  chmod 0440 /etc/sudoers.d/${USERNAME}-firewall
+USER ${USERNAME}
